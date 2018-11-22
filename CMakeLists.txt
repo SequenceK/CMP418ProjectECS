@@ -17,4 +17,9 @@ endif()
 add_executable(multi main.cpp)
 
 target_include_directories(multi PUBLIC ${SDL2_INCLUDE_DIR} ${OpenMP_INCLUDE_DIR})
-target_link_libraries(multi ${SDL2_LIBRARIES})
+
+IF(WIN32)
+	target_link_libraries(multi SDL2::SDL2 SDL2::SDL2main)
+ELSE()
+	target_link_libraries(multi ${SDL2_LIBRARIES})
+ENDIF()
