@@ -14,8 +14,7 @@ if(MINGW)
   set(MINGW32_LIBRARY mingw32 "-mwindows" CACHE STRING "link flags for MinGW")
 endif()
 
-add_executable(multi main.cpp)
-
+add_executable(multi src/main.cpp src/ecs.cpp)
 target_include_directories(multi PUBLIC ${SDL2_INCLUDE_DIR} ${OpenMP_INCLUDE_DIR})
 
 IF(WIN32)
@@ -23,3 +22,5 @@ IF(WIN32)
 ELSE()
 	target_link_libraries(multi ${SDL2_LIBRARIES})
 ENDIF()
+
+file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
