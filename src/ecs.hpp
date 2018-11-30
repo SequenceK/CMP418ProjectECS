@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <list>
 
 using namespace std;
 
@@ -22,6 +23,7 @@ struct Base {
     Base(State * state, ID id, BType type);
 };
 
+
 struct ComponentBase : Base {
     virtual void* get(ID index) = 0;
 };
@@ -38,7 +40,6 @@ struct System : Base {
     vector<ID> entities;
 
     virtual void update() = 0;
-    virtual void render() = 0;
 };
 
 struct Entity : Base {
@@ -53,10 +54,22 @@ struct State {
     vector<ComponentBase*> components;
     vector<System*> systems;
 
-    State();
+    bool systemsSorted = false;
 
+    State();
     ID createEntity();
-    template<class T>
-    ID registerComponent(Component<T> * component);
-    ID registerSystem(System * system);
+    void update();
+
 };
+
+struct DepGraph {
+    Base * base;
+    list<DepGraph*> arrowTo;
+    list<DepGraph*> arrowFrom;
+};
+
+struct SystemsJob {
+    list<System*> systems;
+};
+
+list<SystemsJob> generateJobs(State * state);
