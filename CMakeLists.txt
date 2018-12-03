@@ -15,7 +15,7 @@ if(MINGW)
   set(MINGW32_LIBRARY mingw32 "-mwindows" CACHE STRING "link flags for MinGW")
 endif()
 
-add_executable(multi src/main.cpp src/ecs.cpp)
+add_executable(multi src/main.cpp src/ecs.cpp src/example.cpp)
 target_include_directories(multi PUBLIC ${SDL2_INCLUDE_DIR} ${OpenMP_INCLUDE_DIR})
 
 IF(WIN32)

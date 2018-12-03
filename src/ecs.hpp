@@ -20,44 +20,56 @@ struct Base {
     ID id;
     BType type;
 
-    Base(State * state, ID id, BType type);
+    Base(State * state, BType type);
 };
 
 
-struct ComponentBase : Base {
+struct ComponentBase : public Base {
+
+    ComponentBase(State * state);
+
     virtual void* get(ID index) = 0;
 };
 
 template<class T>
-struct Component : ComponentBase {
-    ID id;
+struct Component : public ComponentBase {
     vector<T> data;
 
-    void * get(ID index);
+    Component(State * state) : ComponentBase(state) {};
+
+    void * get(ID index) {
+        return (void*) &data[index];
+    }
+
+    T * createComponent(ID id);
 };
 
-struct System : Base {
+struct System : public Base {
     vector<ID> entities;
 
+    System(State * state);
+
     virtual void update() = 0;
+
+    void registerEntity(ID eid);
 };
 
-struct Entity : Base {
-    vector<ID> components;
-    vector<ID> systems;
+struct Entity : public Base {
+    ID * components;
+    ID  * systems;
 
-    Entity(State * state, ID id);
+    Entity(State * state);
+    ~Entity();
 };
 
 struct State {
-    vector<Entity> entities;
+    vector<Entity*> entities;
     vector<ComponentBase*> components;
     vector<System*> systems;
 
     bool systemsSorted = false;
 
     State();
-    ID createEntity();
     void update();
 
 };

@@ -7,6 +7,7 @@
 
 using namespace std;
 
+
 int main(int argc, char **argv) {
 
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -35,13 +36,12 @@ int main(int argc, char **argv) {
     srcr.h = 10;
 
     SDL_Rect dstr;
-    dstr.x = 100;
-    dstr.y = 100;
-    dstr.w = 1000;
-    dstr.h = 1000;
+    dstr.x = 20;
+    dstr.y = 20;
+    dstr.w = 100;
+    dstr.h = 100;
 
     State global{};
-    ID e1 = global.createEntity();
 
     bool running = true;
     SDL_Event e;
@@ -53,6 +53,9 @@ int main(int argc, char **argv) {
 
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, &srcr, NULL);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawPoint(renderer, 10, 10);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderPresent(renderer);
     }
 
