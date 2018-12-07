@@ -5,21 +5,25 @@
 #include <SDL2/SDL_image.h>
 
 struct Vec2f {
-    float x=0, y=0;
+  float x=0, y=0;
 };
 
-struct Example {
-    SDL_Window * window;
-    SDL_Renderer * renderer;
+struct VelSys : public EntitySystem {
+  VelSys(State * state);
+  void entityUpdate(Entity * e);
+};
 
-    State * state;
-    Component<SDL_Point> * points;
-    Component<Vec2f> * vel;
-    Component<Vec2f> * acc;
+struct AclSys : public EntitySystem {
+  AclSys(State * state);
+  void entityUpdate(Entity * e);
+};
 
-    Example();
-    ~Example();
+struct AnimationSys : public EntitySystem {
+  AnimationSys(State * state);
+  void entityUpdate(Entity * e);
+};
 
-    void init();
-    void update();
+struct PointRender : public System {
+  PointRender(State * state);
+  void update();
 };
