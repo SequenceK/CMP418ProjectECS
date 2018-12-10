@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
   bool running = true;
   SDL_Event e;
 
+  state.init();
+
   auto currTime = high_resolution_clock::now();
   auto prevTime = currTime;
   while(running) {
@@ -96,7 +98,7 @@ int main(int argc, char **argv) {
     auto elapsed = currTime - prevTime;
     state.dt = duration<double>(currTime-prevTime).count();
     prevTime = currTime;
-    cout << 1/state.dt << endl;
+    //cout << 1/state.dt << endl;
   }
 
   SDL_DestroyTexture(texture);

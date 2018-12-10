@@ -4,6 +4,9 @@
 VelSys::VelSys(Component<Vec2f>* posc, Component<Vec2f>* velc, State * state) : EntitySystem(state) {
   pos = posc;
   vel = velc;
+
+  addReadCompDep(vel->id);
+  addWriteCompDep(pos->id);
 }
 void VelSys::entityUpdate(Entity * e) {
   Vec2f * p = pos->get(e);
@@ -18,6 +21,9 @@ SDLPointUpdate::SDLPointUpdate(Component<Vec2f>* posc,
                                State * state) : EntitySystem(state) {
   pos = posc;
   points = pointc;
+
+  addReadCompDep(pos->id);
+  addWriteCompDep(points->id);
 }
 
 void SDLPointUpdate::entityUpdate(Entity* e) {
