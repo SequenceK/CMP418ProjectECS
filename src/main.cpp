@@ -11,7 +11,7 @@ using namespace std;
 using namespace std::chrono;
 
 int main(int argc, char **argv) {
-
+  omp_set_num_threads(8);
   SDL_Init(SDL_INIT_EVERYTHING);
   IMG_Init(IMG_INIT_PNG);
   SDL_Window * window;
@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
                             SDL_WINDOW_SHOWN
                             );
   SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+  SDL_GL_SetSwapInterval(0);
 
   SDL_Surface * surf = IMG_Load("../data/aus.png");
   if(!surf)
@@ -50,14 +51,23 @@ int main(int argc, char **argv) {
   Component<SDL_Point> points(&state);
 
   VelSys velsys(&pos, &vel, &state);
+  SDLPointUpdate pupdate(&pos, &points, &state);
 
-  Entity e1(&state);
-  Vec2f * p1 = pos.create(&e1);
-  Vec2f * v1 = vel.create(&e1);
-  v1->x = 20;
-  v1->y = 20;
-  velsys.registerEntity(&e1);
+  constexpr unsigned int esize = 100000;
+  Entity * entities[esize];
 
+  for(int i = 0; i < esize; i++) {
+    Entity * e  = new Entity(&state);
+    entities[i] = e;
+    Vec2f * p1 = pos.create(e);
+    Vec2f * v1 = vel.create(e);
+    SDL_Point * point = points.create(e);
+    v1->x = 20;
+    v1->y = 20;
+    p1->y = 10*i;
+    velsys.registerEntity(e);
+    pupdate.registerEntity(e);
+  }
 
   bool running = true;
   SDL_Event e;
@@ -71,16 +81,22 @@ int main(int argc, char **argv) {
         running = false;
     }
     velsys.update();
+    pupdate.update();
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, &srcr, NULL);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawPoint(renderer, p1->x, p1->y);
+
+    //SDL2 segfaults if the size of the array is too big
+    auto psize =  points.data.size();
+    for(int i = 0; i < psize/1000;i++)
+      SDL_RenderDrawPoints(renderer, points.data.data()+1000*i,1000);
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderPresent(renderer);
     auto elapsed = currTime - prevTime;
     state.dt = duration<double>(currTime-prevTime).count();
     prevTime = currTime;
-    cout << state.dt << endl;
+    cout << 1/state.dt << endl;
   }
 
   SDL_DestroyTexture(texture);
@@ -88,5 +104,8 @@ int main(int argc, char **argv) {
   SDL_DestroyWindow(window);
 
   SDL_Quit();
+
+  for(int i = 0; i < esize; i++)
+    delete entities[i];
   return 0;
 }

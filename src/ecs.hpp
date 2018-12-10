@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <list>
-#include <map>
 #include <string>
 
 using namespace std;
@@ -16,6 +15,7 @@ enum BType {
             COMPONENT,
             SYSTEM
 };
+
 
 struct Base {
   State * state;
@@ -35,7 +35,6 @@ struct Entity : public Base {
   void addComponent(ID cid, ID index);
   void addSystem(ID sid, ID index);
 };
-
 struct ComponentBase : public Base {
 
   ComponentBase(State * state);
@@ -67,15 +66,14 @@ struct Component : public ComponentBase {
 };
 
 struct System : public Base {
-  map<string, ID> componentNameMap;
-  map<ID, int> componentDepOrder;
-  map<ID, int> systemDepOrder;
+  vector<ID> readCompDeps{};
+  vector<ID> writeCompDeps{};
   System(State * state);
 
   virtual void update() = 0;
 
-  void addComponentDep(string name, ID id, int order);
-  void addSystemDep(ID id, int order);
+  void addReadCompDep(ID id);
+  void addWriteCompDep(ID id);
 
 };
 
@@ -89,15 +87,21 @@ struct EntitySystem : public System {
   void registerEntity(Entity * e);
 };
 
+typedef void (*FPtr)();
+
 struct State {
   vector<Entity*> entities;
   vector<ComponentBase*> components;
   vector<System*> systems;
 
-  bool systemsSorted = false;
   double dt = 0;
 
+  vector<System*> runningQueue{};
+  vector<unsigned int> tasksPerSection{};
+  unsigned int qIndex = 0;
+
   State();
+  void init();
   void update();
 
   Entity* getEntity(ID id);
@@ -106,14 +110,19 @@ struct State {
 
 };
 
+
 struct DepGraph {
-  Base * base;
-  list<DepGraph*> arrowTo;
-  list<DepGraph*> arrowFrom;
+  System * sys;
+  ComponentBase * comp;
+  vector<DepGraph*> childs;
+  DepGraph* parent;
+  unsigned int resolveCount = 0;
+
+  DepGraph();
+  DepGraph(DepGraph*parent, System*sys);
+  DepGraph(DepGraph*parent, ComponentBase*comp);
 };
 
-struct SystemsJob {
-  list<System*> systems;
-};
 
-list<SystemsJob> generateJobs(State * state);
+list<DepGraph*> generateDepGraph(State * state);
+void resolveDepGraph(State * state, DepGraph * root);

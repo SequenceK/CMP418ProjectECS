@@ -26,7 +26,15 @@ struct AnimationSys : public EntitySystem {
   void entityUpdate(Entity * e);
 };
 
+struct SDLPointUpdate : public EntitySystem {
+  Component<Vec2f>* pos;
+  Component<SDL_Point>* points;
 
+  SDLPointUpdate(Component<Vec2f>* posc,
+                 Component<SDL_Point>* pointc,
+                 State * state);
+  void entityUpdate(Entity* e);
+};
 struct PointRender : public System {
   PointRender(State * state);
   void update();
