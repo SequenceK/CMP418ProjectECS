@@ -9,7 +9,10 @@ struct Vec2f {
 };
 
 struct VelSys : public EntitySystem {
-  VelSys(State * state);
+  Component<Vec2f>* pos;
+  Component<Vec2f>* vel;
+
+  VelSys(Component<Vec2f>* posc, Component<Vec2f>* velc,State * state);
   void entityUpdate(Entity * e);
 };
 
@@ -22,6 +25,7 @@ struct AnimationSys : public EntitySystem {
   AnimationSys(State * state);
   void entityUpdate(Entity * e);
 };
+
 
 struct PointRender : public System {
   PointRender(State * state);

@@ -1,27 +1,16 @@
 #include "example.hpp"
 
 
+VelSys::VelSys(Component<Vec2f>* posc, Component<Vec2f>* velc, State * state) : EntitySystem(state) {
+  pos = posc;
+  vel = velc;
+}
+void VelSys::entityUpdate(Entity * e) {
+  Vec2f * p = pos->get(e);
+  Vec2f * v = vel->get(e);
 
-Example::Example() {
-  SDL_Init(SDL_INIT_EVERYTHING);
-  IMG_Init(IMG_INIT_PNG);
-
-  window = SDL_CreateWindow("Test",
-                            SDL_WINDOWPOS_UNDEFINED,
-                            SDL_WINDOWPOS_UNDEFINED,
-                            250,
-                            250,
-                            SDL_WINDOW_SHOWN
-                            );
-  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
-  state = new State();
-  points = new Component<SDL_Point>(state);
+  p->x += v->x*state->dt;
+  p->y += v->y*state->dt;
 }
 
-void Example::eventUpdate() {
-  while(SDL_PollEvent(&e) != 0) {
-    if(e.type == SDL_QUIT)
-      running = false;
-  }
-}
+

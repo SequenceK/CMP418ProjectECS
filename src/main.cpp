@@ -2,11 +2,13 @@
 #include <SDL2/SDL_image.h>
 #include <iostream>
 #include <omp.h>
+#include <chrono>
 
 #include "ecs.hpp"
+#include "example.hpp"
 
 using namespace std;
-
+using namespace std::chrono;
 
 int main(int argc, char **argv) {
 
@@ -41,22 +43,44 @@ int main(int argc, char **argv) {
   dstr.w = 100;
   dstr.h = 100;
 
-  State global{};
+  State state{};
+  Component<Vec2f> pos(&state);
+  Component<Vec2f> vel(&state);
+  Component<Vec2f> acl(&state);
+  Component<SDL_Point> points(&state);
+
+  VelSys velsys(&pos, &vel, &state);
+
+  Entity e1(&state);
+  Vec2f * p1 = pos.create(&e1);
+  Vec2f * v1 = vel.create(&e1);
+  v1->x = 20;
+  v1->y = 20;
+  velsys.registerEntity(&e1);
+
 
   bool running = true;
   SDL_Event e;
+
+  auto currTime = high_resolution_clock::now();
+  auto prevTime = currTime;
   while(running) {
+    currTime = high_resolution_clock::now();
     while(SDL_PollEvent(&e) != 0) {
       if(e.type == SDL_QUIT)
         running = false;
     }
-
+    velsys.update();
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, &srcr, NULL);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawPoint(renderer, 10, 10);
+    SDL_RenderDrawPoint(renderer, p1->x, p1->y);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderPresent(renderer);
+    auto elapsed = currTime - prevTime;
+    state.dt = duration<double>(currTime-prevTime).count();
+    prevTime = currTime;
+    cout << state.dt << endl;
   }
 
   SDL_DestroyTexture(texture);

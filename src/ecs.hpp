@@ -25,12 +25,22 @@ struct Base {
   Base(State * state, BType type);
 };
 
+struct Entity : public Base {
+  ID * components;
+  ID  * systems;
+
+  Entity(State * state);
+  ~Entity();
+
+  void addComponent(ID cid, ID index);
+  void addSystem(ID sid, ID index);
+};
 
 struct ComponentBase : public Base {
 
   ComponentBase(State * state);
 
-  virtual void* get(ID index) = 0;
+  virtual void* getv(ID index) = 0;
 };
 
 template<class T>
@@ -39,11 +49,21 @@ struct Component : public ComponentBase {
 
   Component(State * state) : ComponentBase(state) {};
 
-  void * get(ID index) {
+  void * getv(ID index) {
     return (void*) &data[index];
   }
 
-  T * createComponent(ID id);
+  T * get(Entity*e) {
+    return &data[e->components[id]];
+  }
+
+  template<class... Args>
+  T * create(Entity * e, Args... args) {
+    ID cid = data.size();
+    e->addComponent(id, cid);
+    data.emplace_back(args...);
+    return &data[cid];
+  }
 };
 
 struct System : public Base {
@@ -56,6 +76,7 @@ struct System : public Base {
 
   void addComponentDep(string name, ID id, int order);
   void addSystemDep(ID id, int order);
+
 };
 
 struct EntitySystem : public System {
@@ -65,15 +86,7 @@ struct EntitySystem : public System {
   void update();
 
   virtual void entityUpdate(Entity * e) = 0;
-  void registerEntity(ID eid);
-};
-
-struct Entity : public Base {
-  ID * components;
-  ID  * systems;
-
-  Entity(State * state);
-  ~Entity();
+  void registerEntity(Entity * e);
 };
 
 struct State {
@@ -82,9 +95,14 @@ struct State {
   vector<System*> systems;
 
   bool systemsSorted = false;
+  double dt = 0;
 
   State();
   void update();
+
+  Entity* getEntity(ID id);
+  ComponentBase* getComponent(ID id);
+  System* getSystem(ID id);
 
 };
 
