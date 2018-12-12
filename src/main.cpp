@@ -12,7 +12,8 @@ using namespace std;
 using namespace std::chrono;
 
 int main(int argc, char **argv) {
-  omp_set_num_threads(8);
+  omp_set_num_threads(4);
+  omp_set_nested(0);
 
   int width = 250;
   int height = 250;
@@ -116,7 +117,7 @@ int main(int argc, char **argv) {
     auto elapsed = currTime - prevTime;
     state.dt = duration<double>(currTime-prevTime).count();
     prevTime = currTime;
-    //cout << 1/state.dt << endl;
+    cout << 1/state.dt << endl;
   }
 
   SDL_DestroyTexture(texture);

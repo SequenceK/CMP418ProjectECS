@@ -115,17 +115,17 @@ struct State {
 
 
 struct DepGraph {
-  System * sys;
-  ComponentBase * comp;
-  vector<DepGraph*> childs;
-  DepGraph* parent;
-  unsigned int resolveCount = 0;
+  System * sys = nullptr;
+  ComponentBase * comp = nullptr;
+  vector<DepGraph*> childs{};
+  vector<DepGraph*> parents{};
+  unsigned int order = 0;
 
   DepGraph();
-  DepGraph(DepGraph*parent, System*sys);
-  DepGraph(DepGraph*parent, ComponentBase*comp);
+  DepGraph(System*sys);
+  DepGraph(ComponentBase*comp);
 };
 
 
 list<DepGraph*> generateDepGraph(State * state);
-void resolveDepGraph(State * state, DepGraph * root);
+void resolveDepGraph(DepGraph * root);

@@ -85,14 +85,14 @@ State::State() : entities(), components(), systems() {
 void State::init() {
   list<DepGraph*> dlist = generateDepGraph(this);
   DepGraph * root = dlist.front();
-  resolveDepGraph(this, root);
+  resolveDepGraph(root);
+  dlist.sort([](const DepGraph* a,const DepGraph* b){return a->order<b->order;});
   cout << "dep size" << dlist.size() << endl;
-  for(DepGraph * n : dlist) {
-    cout << "Dep " << n->sys << " " << n->comp << " " << n->childs.size() << endl;
-    for(auto & c : n->childs)
-      cout << "Child " << c->sys << " " << c->comp << " " << c->childs.size() << endl;
+  //int prevorder =  0;
+  for(DepGraph * d : dlist) {
+    if(d->sys)
+      runningQueue.push_back(d->sys);
   }
-
 
   unsigned int scc = 0;
   for(auto sc : tasksPerSection) {
@@ -105,17 +105,10 @@ void State::init() {
 }
 
 void State::update() {
-  //cout << runningQueue.size() << endl;
   queueIndex = 0;
-  for(auto & sec : tasksPerSection) {
-    //cout << "section size " << sec << endl;
-#pragma omp parallel for schedule(static, 1)
-      for(int i = 0; i < sec; i++){
-        #pragma omp critical
-        //cout << "Running System " << runningQueue[queueIndex] << endl;
-        runningQueue[queueIndex]->update();
-        queueIndex++;
-      }
+
+  for(auto & sys : runningQueue) {
+    sys->update();
   }
 }
 
@@ -133,20 +126,14 @@ System* State::getSystem(ID id) {
 }
 
 
-DepGraph::DepGraph() : childs() {
-  parent = nullptr;
-  sys = nullptr;
-  comp = nullptr;
-}
-DepGraph::DepGraph(DepGraph*parent, System* sys) : childs() {
-  this->parent = parent;
+DepGraph::DepGraph(){
+ }
+
+DepGraph::DepGraph( System* sys) {
   this->sys = sys;
-  comp = nullptr;
 }
 
-DepGraph::DepGraph(DepGraph*parent, ComponentBase* comp) : childs() {
-  this->parent = parent;
-  sys = nullptr;
+DepGraph::DepGraph( ComponentBase* comp) {
   this->comp = comp;
 }
 
@@ -159,7 +146,7 @@ list<DepGraph*> generateDepGraph(State * state) {
 
   //Write dependencies pass
   for(System * sys : state->systems) {
-    DepGraph * g = new DepGraph(nullptr, sys);
+    DepGraph * g = new DepGraph(sys);
     glist.push_back(g);
     graphsmap[sys->id] = g;
     for(ID id : sys->writeCompDeps) {
@@ -167,22 +154,14 @@ list<DepGraph*> generateDepGraph(State * state) {
       DepGraph * cg;
       if(graphcmap.find(id) != graphcmap.end()){
         cg = graphcmap[id];
-        if(cg->parent!=nullptr) {
-          g->parent = cg->parent;
-          cg->parent = g;
-          g->resolveCount += cg->parent->resolveCount;
-        }
-        else {
-          cg->parent = g;
-          g->resolveCount++;
-        }
       }
       else {
-        cg = new DepGraph(g, com);
+        cg = new DepGraph(com);
         glist.push_back(cg);
-        g->childs.push_back(cg);
         graphcmap[id] = cg;
       }
+      g->childs.push_back(cg);
+      cg->parents.push_back(g);
     }
   }
 
@@ -195,29 +174,28 @@ list<DepGraph*> generateDepGraph(State * state) {
       if(graphcmap.find(id) != graphcmap.end())
         cg = graphcmap[id];
       else{
-        cg = new DepGraph(nullptr, com);
+        cg = new DepGraph(com);
         glist.push_back(cg);
         graphcmap[id] = cg;
       }
 
       cg->childs.push_back(g);
-      g->resolveCount++;
-      g->parent = cg;
+      g->parents.push_back(cg);
     }
   }
 
   //Pass over the graph map and add empty parent nodes to the root
   for(auto& pair : graphcmap) {
     DepGraph * node = pair.second;
-    if(node->parent==nullptr) {
-      node->parent = root;
+    if(node->parents.size()==0) {
+      node->parents.push_back(root);
       root->childs.push_back(node);
     }
   }
   for(auto& pair : graphsmap) {
     DepGraph * node = pair.second;
-    if(node->parent==nullptr) {
-      node->parent = root;
+    if(node->parents.size()==0) {
+      node->parents.push_back(root);
       root->childs.push_back(node);
     }
   }
@@ -225,41 +203,14 @@ list<DepGraph*> generateDepGraph(State * state) {
   return glist;
 }
 
-void resolveDepGraph(State * state, DepGraph * root) {
-  queue<DepGraph*>unresolved{};
-  unresolved.push(root);
+ void resolveDepGraph( DepGraph * n) {
+   for(DepGraph * c : n->childs) {
+     if(n->sys)
+       c->order++;
+     else if(n->comp)
+       c->order = (c->order<n->order)?n->order:c->order;
 
-  while(unresolved.size()!=0) {
-    int sectionCount = 0;
-    DepGraph * cnode = unresolved.front();
-    unresolved.pop();
-
-    for(DepGraph * n : cnode->childs) {
-      n->resolveCount--;
-      if(n->sys) {
-        if(n->resolveCount <= 0) {
-          sectionCount++;
-          state->runningQueue.push_back(n->sys);
-          for(DepGraph* n2 : n->childs) {
-            unresolved.push(n2);
-          }
-        }
-      } else {
-        for(DepGraph* n2 : n->childs) {
-          n2->resolveCount--;
-          if(n2->sys && n2->resolveCount <= 0) {
-            sectionCount++;
-            state->runningQueue.push_back(n2->sys);
-            for(DepGraph* n2 : n->childs) {
-              unresolved.push(n2);
-            }
-          }
-        }
-      }
-    }
-
-
-    state->tasksPerSection.push_back(sectionCount);
-  }
+     resolveDepGraph(c);
+   }
 }
 
