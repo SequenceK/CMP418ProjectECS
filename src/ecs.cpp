@@ -5,7 +5,6 @@
 #include <map>
 #include <queue>
 
-#define tstr(x) #x
 
 Base::Base(State* state, BType type) : state(state), type(type) {
 }
@@ -43,15 +42,11 @@ void Entity::addSystem(ID sid, ID index) {
 ComponentBase::ComponentBase(State * state) : Base(state, BType::COMPONENT) {
   id = state->components.size();
   state->components.push_back(this);
-
-  cout << "Component " << this << " " << id << " added.\n";
 }
 
 System::System(State * state) : Base(state, BType::SYSTEM) {
   id = state->systems.size();
   state->systems.push_back(this);
-
-  cout << "System " << this <<" " <<id<<  " added.\n";
 }
 
 void System::addReadCompDep(ID id) {
@@ -87,21 +82,12 @@ void State::init() {
   DepGraph * root = dlist.front();
   resolveDepGraph(root);
   dlist.sort([](const DepGraph* a,const DepGraph* b){return a->order<b->order;});
-  cout << "dep size" << dlist.size() << endl;
-  //int prevorder =  0;
+
   for(DepGraph * d : dlist) {
     if(d->sys)
       runningQueue.push_back(d->sys);
   }
 
-  unsigned int scc = 0;
-  for(auto sc : tasksPerSection) {
-    cout << "Section " << sc << endl;
-    for(int i = 0; i < sc; i++) {
-      cout << "System " << runningQueue[i+scc] << endl;
-    }
-    scc+=sc;
-  }
 }
 
 void State::update() {

@@ -42,3 +42,4 @@ struct BoundsChecker : public EntitySystem {
   BoundsChecker(Component<Vec2f>*posc, Component<Vec2f>*velc, State*state);
   void entityUpdate(Entity* e);
 };
+

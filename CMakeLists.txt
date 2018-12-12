@@ -18,10 +18,8 @@ add_executable(multi src/main.cpp src/ecs.cpp src/example.cpp)
 target_include_directories(multi PUBLIC ${SDL2_INCLUDE_DIR} ${OpenMP_INCLUDE_DIR})
 
 IF(WIN32)
-	find_library(SDL2_IMAGE_LIB sdl2_image.lib)
-	target_link_libraries(multi SDL2::SDL2 SDL2::SDL2main ${SDL2_IMAGE_LIB})
+	target_link_libraries(multi SDL2::SDL2 SDL2::SDL2main)
 ELSE()
-	target_link_libraries(multi ${SDL2_LIBRARIES} SDL2_image)
+	target_link_libraries(multi ${SDL2_LIBRARIES})
 ENDIF()
 
-file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

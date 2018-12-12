@@ -20,7 +20,7 @@ AclSys::AclSys(Component<Vec2f>*velc, Component<Vec2f>*aclc, State*state) : Enti
   vel = velc;
   acl = aclc;
 
-  addReadCompDep(acl->id);
+  addWriteCompDep(acl->id);
   addWriteCompDep(vel->id);
 }
 
