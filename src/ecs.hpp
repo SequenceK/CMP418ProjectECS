@@ -95,7 +95,10 @@ struct State {
   vector<System*> systems;
 
   double dt = 0;
+  int width = 0;
+  int height = 0;
 
+  int queueIndex = 0;
   vector<System*> runningQueue{};
   vector<unsigned int> tasksPerSection{};
   unsigned int qIndex = 0;

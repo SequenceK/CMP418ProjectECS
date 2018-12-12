@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include <iostream>
 #include <omp.h>
+#include <stdlib.h>
 #include <chrono>
 
 #include "ecs.hpp"
@@ -12,14 +13,18 @@ using namespace std::chrono;
 
 int main(int argc, char **argv) {
   omp_set_num_threads(8);
+
+  int width = 250;
+  int height = 250;
+
   SDL_Init(SDL_INIT_EVERYTHING);
   IMG_Init(IMG_INIT_PNG);
   SDL_Window * window;
   window = SDL_CreateWindow("Test",
                             SDL_WINDOWPOS_UNDEFINED,
                             SDL_WINDOWPOS_UNDEFINED,
-                            250,
-                            250,
+                            width,
+                            height,
                             SDL_WINDOW_SHOWN
                             );
   SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -45,15 +50,23 @@ int main(int argc, char **argv) {
   dstr.h = 100;
 
   State state{};
+
+  state.width = 250;
+  state.height = 250;
+
   Component<Vec2f> pos(&state);
   Component<Vec2f> vel(&state);
   Component<Vec2f> acl(&state);
   Component<SDL_Point> points(&state);
 
+  AclSys aclsys(&vel, &acl, &state);
   VelSys velsys(&pos, &vel, &state);
+  BoundsChecker bcker(&pos, &vel, &state);
+  
   SDLPointUpdate pupdate(&pos, &points, &state);
+  
 
-  constexpr unsigned int esize = 100000;
+  constexpr unsigned int esize = 10000;
   Entity * entities[esize];
 
   for(int i = 0; i < esize; i++) {
@@ -61,12 +74,18 @@ int main(int argc, char **argv) {
     entities[i] = e;
     Vec2f * p1 = pos.create(e);
     Vec2f * v1 = vel.create(e);
+    Vec2f * a1 = acl.create(e);
     SDL_Point * point = points.create(e);
-    v1->x = 20;
-    v1->y = 20;
-    p1->y = 10*i;
+    a1->x = ((float)rand() / RAND_MAX - 0.5f)*10;
+    a1->y = ((float)rand() / RAND_MAX - 0.5f)*10;
+    v1->x = ((float)rand() / RAND_MAX - 0.5f)*10;
+    v1->y = ((float)rand() / RAND_MAX - 0.5f)*10;
+    p1->x = width/2.0f;
+    p1->y = height/2.0f;
+    aclsys.registerEntity(e);
     velsys.registerEntity(e);
     pupdate.registerEntity(e);
+    bcker.registerEntity(e);
   }
 
   bool running = true;
@@ -82,8 +101,7 @@ int main(int argc, char **argv) {
       if(e.type == SDL_QUIT)
         running = false;
     }
-    velsys.update();
-    pupdate.update();
+    state.update();
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, &srcr, NULL);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);

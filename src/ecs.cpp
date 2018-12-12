@@ -89,6 +89,8 @@ void State::init() {
   cout << "dep size" << dlist.size() << endl;
   for(DepGraph * n : dlist) {
     cout << "Dep " << n->sys << " " << n->comp << " " << n->childs.size() << endl;
+    for(auto & c : n->childs)
+      cout << "Child " << c->sys << " " << c->comp << " " << c->childs.size() << endl;
   }
 
 
@@ -103,8 +105,17 @@ void State::init() {
 }
 
 void State::update() {
-  for(auto & sys : systems) {
-    sys->update();
+  //cout << runningQueue.size() << endl;
+  queueIndex = 0;
+  for(auto & sec : tasksPerSection) {
+    //cout << "section size " << sec << endl;
+#pragma omp parallel for schedule(static, 1)
+      for(int i = 0; i < sec; i++){
+        #pragma omp critical
+        //cout << "Running System " << runningQueue[queueIndex] << endl;
+        runningQueue[queueIndex]->update();
+        queueIndex++;
+      }
   }
 }
 
@@ -139,7 +150,6 @@ DepGraph::DepGraph(DepGraph*parent, ComponentBase* comp) : childs() {
   this->comp = comp;
 }
 
-
 list<DepGraph*> generateDepGraph(State * state) {
   map<ID, DepGraph*> graphsmap{};
   map<ID, DepGraph*> graphcmap{};
@@ -160,9 +170,12 @@ list<DepGraph*> generateDepGraph(State * state) {
         if(cg->parent!=nullptr) {
           g->parent = cg->parent;
           cg->parent = g;
+          g->resolveCount += cg->parent->resolveCount;
         }
-        else
+        else {
           cg->parent = g;
+          g->resolveCount++;
+        }
       }
       else {
         cg = new DepGraph(g, com);

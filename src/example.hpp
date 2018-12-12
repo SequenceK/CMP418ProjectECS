@@ -17,12 +17,11 @@ struct VelSys : public EntitySystem {
 };
 
 struct AclSys : public EntitySystem {
-  AclSys(State * state);
-  void entityUpdate(Entity * e);
-};
 
-struct AnimationSys : public EntitySystem {
-  AnimationSys(State * state);
+  Component<Vec2f> * vel;
+  Component<Vec2f> * acl;
+
+  AclSys(Component<Vec2f>*velc, Component<Vec2f>*aclc,State * state);
   void entityUpdate(Entity * e);
 };
 
@@ -35,7 +34,11 @@ struct SDLPointUpdate : public EntitySystem {
                  State * state);
   void entityUpdate(Entity* e);
 };
-struct PointRender : public System {
-  PointRender(State * state);
-  void update();
+
+struct BoundsChecker : public EntitySystem {
+  Component<Vec2f>* pos;
+  Component<Vec2f>* vel;
+
+  BoundsChecker(Component<Vec2f>*posc, Component<Vec2f>*velc, State*state);
+  void entityUpdate(Entity* e);
 };
